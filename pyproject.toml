@@ -1,0 +1,15 @@
+[project]
+name = "Abgabe3-Leistungskurve_II"
+version = "0.1.0"
+description = "Default template for PDM package"
+authors = [
+    {name = "milanbuerkle", email = "m.buerkle@mci4me.at"},
+]
+dependencies = ["pandas>=3.0.3", "numpy>=2.4.6", "matplotlib>=3.10.9"]
+requires-python = "==3.12.*"
+readme = "README.md"
+license = {text = "MIT"}
+
+
+[tool.pdm]
+distribution = false
