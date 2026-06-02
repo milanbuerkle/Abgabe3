@@ -1,4 +1,4 @@
-import numpy as np
+﻿import numpy as np
 import pandas as pd
 
 
@@ -17,7 +17,7 @@ def create_power_curve(df: pd.DataFrame,
         Spalte mit Leistungswerten [W].
 
     time_column : str
-        Spalte mit Zeitwerten [s].
+        Spalte mit Zeitwerten [s] oder mit Sample-Dauern [s].
 
     Returns
     -------
@@ -26,22 +26,43 @@ def create_power_curve(df: pd.DataFrame,
         power_w    : maximale Durchschnittsleistung [W]
     """
 
-    power = df[power_column].to_numpy(dtype=float)
-    time = df[time_column].to_numpy(dtype=float)
+    subset = df[[power_column, time_column]].dropna(subset=[power_column, time_column])
+    power = subset[power_column].to_numpy(dtype=float)
+    time = subset[time_column].to_numpy(dtype=float)
 
-    sample_time_s = np.median(np.diff(time))
+    if len(power) == 0:
+        raise ValueError("Keine gültigen Daten für die Power Curve gefunden.")
+
+    if np.all(np.diff(time) >= 0) and np.any(np.diff(time) > 0):
+        sample_durations = np.diff(np.concatenate(([0.0], time)))
+    else:
+        sample_durations = time
+
+    sample_durations = np.maximum(sample_durations, 0.0)
+    energy = power * sample_durations
+    cumulative_time = np.concatenate(([0.0], np.cumsum(sample_durations)))
+    cumulative_energy = np.concatenate(([0.0], np.cumsum(energy)))
+
     n = len(power)
-
-    cumulative = np.concatenate(([0.0], np.cumsum(power)))
-
     durations = []
     max_powers = []
 
     for window in range(1, n + 1):
-        rolling_sum = cumulative[window:] - cumulative[:-window]
-        max_avg_power = rolling_sum.max() / window
-        durations.append(window * sample_time_s)
-        max_powers.append(max_avg_power)
+        window_times = cumulative_time[window:] - cumulative_time[:-window]
+        window_energy = cumulative_energy[window:] - cumulative_energy[:-window]
+
+        valid = window_times > 0.0
+        if not np.any(valid):
+            durations.append(0.0)
+            max_powers.append(np.nan)
+            continue
+
+        average_powers = np.full_like(window_times, np.nan, dtype=float)
+        average_powers[valid] = window_energy[valid] / window_times[valid]
+
+        best_idx = np.nanargmax(average_powers)
+        durations.append(window_times[best_idx])
+        max_powers.append(average_powers[best_idx])
 
     return pd.DataFrame({
         "duration_s": durations,
