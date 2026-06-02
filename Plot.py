@@ -1,23 +1,74 @@
 import matplotlib.pyplot as plt
-import pandas as pd
+import numpy as np
+from matplotlib.ticker import FuncFormatter, LogLocator
 
 
-def plot_power_curve(power_curve_df: pd.DataFrame):
+def plot_power_curve(duration_s, power_w):
+    duration_s = np.asarray(duration_s, dtype=float)
+    power_w = np.asarray(power_w, dtype=float)
 
-    plt.figure(figsize=(10, 6))
+    fig, ax = plt.subplots(figsize=(10, 6))
 
-    plt.plot(
-        power_curve_df["duration_s"],
-        power_curve_df["power_w"]
+    ax.plot(
+        duration_s,
+        power_w,
+        marker="o",
+        linewidth=1.5,
+        markersize=3,
     )
 
-    plt.xscale("log")
+    ax.set_xscale("log")
+    ax.xaxis.set_major_locator(LogLocator(base=10.0, numticks=6, subs=(1.0,)))
+    ax.xaxis.set_minor_locator(LogLocator(base=10.0, subs="auto", numticks=12))
+    ax.xaxis.set_major_formatter(FuncFormatter(lambda x, pos: f"{int(x):d}" if x >= 1 and float(int(x)) == x else f"{x:.0f}"))
+    ax.tick_params(axis="x", which="major", labelsize=10)
 
-    plt.xlabel("Zeit [s]")
-    plt.ylabel("Leistung [W]")
-    plt.title("Power Duration Curve")
+    annotation = ax.annotate(
+        "",
+        xy=(0.98, 0.98),
+        xycoords="axes fraction",
+        horizontalalignment="right",
+        verticalalignment="top",
+        bbox=dict(boxstyle="round,pad=0.3", fc="white", alpha=0.95, edgecolor="black"),
+        fontsize=9,
+        visible=False,
+        zorder=20,
+    )
 
-    plt.grid(True)
-    plt.tight_layout()
+    vline = ax.axvline(color="gray", linestyle="--", linewidth=0.8, alpha=0.7, visible=False)
 
-    return plt.gcf()
+    x_values = duration_s
+    y_values = power_w
+
+    def on_move(event):
+        if event.inaxes != ax or event.xdata is None or event.ydata is None:
+            annotation.set_visible(False)
+            vline.set_visible(False)
+            fig.canvas.draw_idle()
+            return
+
+        if event.xdata <= 0:
+            annotation.set_visible(False)
+            vline.set_visible(False)
+            fig.canvas.draw_idle()
+            return
+
+        idx = int(np.argmin(np.abs(np.log10(x_values) - np.log10(event.xdata))))
+        x_val = x_values[idx]
+        y_val = y_values[idx]
+
+        annotation.set_text(f"Zeit: {x_val:.1f} s\nLeistung: {y_val:.1f} W")
+        annotation.set_visible(True)
+        vline.set_xdata(x_val)
+        vline.set_visible(True)
+        fig.canvas.draw_idle()
+
+    fig.canvas.mpl_connect("motion_notify_event", on_move)
+
+    ax.set_xlabel("Zeit [s]")
+    ax.set_ylabel("Leistung [W]")
+    ax.set_title("Power Duration Curve")
+    ax.grid(True)
+
+    fig.tight_layout()
+    return fig
