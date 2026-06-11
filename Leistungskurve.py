@@ -1,4 +1,4 @@
-﻿import numpy as np
+import numpy as np
 import pandas as pd
 from typing import Optional, Sequence, Union
 
@@ -21,7 +21,10 @@ def create_power_curve(
         Spalte mit Leistungswerten [W], wenn data ein DataFrame ist.
 
     time_column : str
-        Spalte mit Zeitwerten [s].
+        Spalte mit Zeitwerten [s] oder mit Sample-Dauern [s], wenn data ein DataFrame ist.
+
+    time : Series, ndarray oder Sequenz, optional
+        Zeitwerte oder Sample-Dauern, wenn data eine Leistungsserie ist.
 
     Returns
     -------
@@ -30,10 +33,35 @@ def create_power_curve(
         power_w    : maximale Durchschnittsleistung [W]
     """
 
-    power = df[power_column].to_numpy(dtype=float)
-    time = df[time_column].to_numpy(dtype=float)
+    if isinstance(data, pd.DataFrame):
+        subset = data[[power_column, time_column]].dropna(subset=[power_column, time_column])
+        power = subset[power_column].to_numpy(dtype=float)
+        time_values = subset[time_column].to_numpy(dtype=float)
+    else:
+        power = np.asarray(data, dtype=float)
+        if time is None:
+            time_values = None
+        else:
+            time_values = np.asarray(time, dtype=float)
+            if time_values.shape != power.shape:
+                raise ValueError("Laenge von Leistung und Zeit muss ueberinstimmen.")
 
-    sample_time_s = np.median(np.diff(time))
+    if power.size == 0:
+        raise ValueError("Keine gueltigen Daten fuer die Power Curve gefunden.")
+
+    if time_values is None:
+        sample_durations = np.ones_like(power, dtype=float)
+    elif np.all(np.diff(time_values) >= 0) and np.any(np.diff(time_values) > 0):
+        sample_durations = np.diff(np.concatenate(([0.0], time_values)))
+    else:
+        sample_durations = time_values
+
+    sample_durations = np.maximum(sample_durations, 0.0)
+
+    energy = power * sample_durations
+    cumulative_time = np.concatenate(([0.0], np.cumsum(sample_durations)))
+    cumulative_energy = np.concatenate(([0.0], np.cumsum(energy)))
+
     n = len(power)
     durations = []
     max_powers = []

@@ -59,7 +59,7 @@ def plot_power_curve(duration_s, power_w):
 
         annotation.set_text(f"Zeit: {x_val:.1f} s\nLeistung: {y_val:.1f} W")
         annotation.set_visible(True)
-        vline.set_xdata(x_val)
+        vline.set_xdata([x_val, x_val])
         vline.set_visible(True)
         fig.canvas.draw_idle()
 
