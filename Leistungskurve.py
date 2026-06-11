@@ -9,29 +9,6 @@ def create_power_curve(
     time_column: str = "Duration",
     time: Optional[Union[pd.Series, np.ndarray, Sequence[float]]] = None,
 ) -> pd.DataFrame:
-    """
-    Berechnet eine Power Duration Curve.
-
-    Parameters
-    ----------
-    data : DataFrame, Series, ndarray oder Sequenz
-        Aktivitaetsdaten als DataFrame oder reine Leistungswerte [W].
-
-    power_column : str
-        Spalte mit Leistungswerten [W], wenn data ein DataFrame ist.
-
-    time_column : str
-        Spalte mit Zeitwerten [s] oder mit Sample-Dauern [s], wenn data ein DataFrame ist.
-
-    time : Series, ndarray oder Sequenz, optional
-        Zeitwerte oder Sample-Dauern, wenn data eine Leistungsserie ist.
-
-    Returns
-    -------
-    pd.DataFrame
-        duration_s : Dauer [s]
-        power_w    : maximale Durchschnittsleistung [W]
-    """
 
     if isinstance(data, pd.DataFrame):
         subset = data[[power_column, time_column]].dropna(subset=[power_column, time_column])
