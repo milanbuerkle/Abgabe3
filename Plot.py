@@ -4,18 +4,14 @@ from matplotlib.ticker import FuncFormatter, LogLocator
 
 
 def plot_power_curve(duration_s, power_w):
-    duration_s = np.asarray(duration_s, dtype=float)
-    power_w = np.asarray(power_w, dtype=float)
+    duration_s, power_w = map(
+    lambda x: np.asarray(x, dtype=float),
+    (duration_s, power_w)
+)
 
     fig, ax = plt.subplots(figsize=(10, 6))
 
-    ax.plot(
-        duration_s,
-        power_w,
-        marker="o",
-        linewidth=1.5,
-        markersize=3,
-    )
+    ax.plot(duration_s, power_w, "o-", lw=1.5, ms=3)
 
     ax.set_xscale("log")
     ax.xaxis.set_major_locator(LogLocator(base=10.0, numticks=6, subs=(1.0,)))

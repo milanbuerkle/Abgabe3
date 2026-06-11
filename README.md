@@ -1,5 +1,10 @@
 # Abgabe3
 
+# Beschreibung 
+
+Dieses Projekt erstellt aus Leistungsdaten (Watt) eine Power Duration Curve.
+Die Leistungskurve wird berechnet und anschließend als Diagramm dargestellt.
+
 ## Python-Umgebung
 
 Dieses Projekt verwendet ein lokales virtuelles Umfeld in `.venv`.
@@ -28,3 +33,9 @@ python main.py
 - pandas
 - matplotlib
 - numpy
+
+## Visualisierung
+
+![Power Duration Curve](docs/power_curve.png)
+
+Die Grafik zeigt die Power Duration Curve, die von `main.py` erzeugt wird.
